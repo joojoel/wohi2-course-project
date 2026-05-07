@@ -19,19 +19,37 @@ function formatQuestion(question) {
 // GET /questions
 // List all questions
 router.get("/", async (req, res) => {
+    
     const { keyword } = req.query;
 
     const where = keyword
         ? { keywords: { some: { name: keyword } } }
         : {};
 
-    const questions = await prisma.question.findMany({
-        where,
-        include: { keywords: true, user: true },
-        orderBy: { id: "asc" },
-    })
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.max(1, Math.min(100, parseInt(req.query.limit) || 5));
+    const skip = (page - 1) * limit;
 
-    res.json(questions.map(formatQuestion));
+    const [filteredQuestions, total] = await Promise.all([
+        prisma.question.findMany({
+            where,
+            include: { keywords: true, user: true },
+            orderBy: { id: "asc" },
+            skip,
+            take: limit,
+        }),
+        prisma.question.count({ where }),
+    ]);
+    
+    //res.json(questions.map(formatQuestion));
+
+    res.json({
+        data: filteredQuestions.map(formatQuestion),
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+    });
 });
 
 
