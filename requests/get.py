@@ -7,9 +7,13 @@ token = requests.post("http://localhost:3000/api/auth/login", json=creds).json()
 headers = {"Authorization": "Bearer "+token}
 
 if (len(sys.argv) > 1):
-    response = requests.get(f"http://localhost:3000/api/questions{sys.argv[1]}", headers=headers)
+    url = f"http://localhost:3000/api/questions{sys.argv[1]}"
+    print("Using url", url)
+    response = requests.get(url, headers=headers)
 else:
-    response = requests.get("http://localhost:3000/api/questions", headers=headers)
+    url = "http://localhost:3000/api/questions"
+    print("Using url", url)
+    response = requests.get(url, headers=headers)
 
 print(json.dumps(response.json(), indent=2))
 

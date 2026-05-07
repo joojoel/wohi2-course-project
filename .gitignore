@@ -5,3 +5,7 @@ node_modules/
 /src/generated/prisma
 
 eslint.config.mjs
+
+# User-uploaded files
+public/uploads/*
+!public/uploads/.gitkeep
