@@ -125,7 +125,7 @@ router.get("/:questionId", async (req, res) => {
 
 // POST /questions
 // Create a new question
-router.post("/" ,async (req, res) => {
+router.post("/", upload.single("image"), async (req, res) => {
     const { question, choice_1, choice_2, choice_3, choice_4, solution, keywords } = req.body;
 
     if (!question || !choice_1 || !choice_2 || !choice_3 || !choice_4 || !solution) {
@@ -136,6 +136,8 @@ router.post("/" ,async (req, res) => {
 
     const keywordsArray = Array.isArray(keywords) ? keywords : [];
 
+    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    
     const newQuestion = await prisma.question.create({
         data: {
             question, choice_1, choice_2, choice_3, choice_4, solution,
@@ -145,10 +147,11 @@ router.post("/" ,async (req, res) => {
                     where: { name: kw }, create: { name: kw },
                 })),
             },
+            imageUrl
         },
         include: { keywords: true },
     });
-
+    
     res.status(201).json(formatQuestion(newQuestion))
 });
 
@@ -182,7 +185,7 @@ router.post("/:questionId/like", async (req, res) => {
 
 // PUT /questions/questionId
 // Replace a question
-router.put("/:questionId", isOwner, async (req, res) => {
+router.put("/:questionId", upload.single("image"), isOwner, async (req, res) => {
     const questionId = Number(req.params.questionId);
     const { question, choice_1, choice_2, choice_3, choice_4, solution, keywords } = req.body;
     const existingQuestion = await prisma.question.findUnique({ where: { id: questionId } });
@@ -210,6 +213,8 @@ router.put("/:questionId", isOwner, async (req, res) => {
         include: { keywords: true },
     });
     res.json(formatQuestion(updatedQuestion));
+    
+    if (req.file) data.imageUrl = `/uploads/${req.file.filename}`;
 });
 
 // DELETE /questions/:questionId

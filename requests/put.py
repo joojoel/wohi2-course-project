@@ -1,5 +1,4 @@
 import requests
-import json
 
 creds = {"email": "test@gmail.com", "password": "testpass"}
 token = requests.post("http://localhost:3000/api/auth/login", json=creds).json()["token"]

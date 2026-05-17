@@ -3,10 +3,12 @@ const app = express();
 const questionsRouter = require("./routes/questions");
 const prisma = require("./lib/prisma");
 const authRouter = require("./routes/auth");
+const path = require('path');
 
 app.use(express.json());
 app.use("/api/auth", authRouter);
 app.use("/api/questions", questionsRouter);
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.use((req, res) => {
     res.json({ msg: "Not found" });
