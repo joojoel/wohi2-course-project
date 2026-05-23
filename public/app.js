@@ -289,7 +289,7 @@ async function loadQuestionDetail(qId) {
 async function showQuestionForm(qId) {
   const container = document.getElementById("questions-container");
   const isEdit = !!qId;
-  let q = { question: "", answer: "", keywords: [] };
+  let q = { question: "", choice_1: "", choice_2: "", choice_3: "", choice_4: "", solution: null, keywords: [] };
 
   if (isEdit) {
     try {
@@ -309,9 +309,29 @@ async function showQuestionForm(qId) {
           <label for="q-question">Question</label>
           <input type="text" id="q-question" value="${q.question}" required />
         </div>
+        <div class="form-group"
+          <label for="q-choice_1">Choice 1</label>
+          <textarea id="q-choice_1" rows="2" required>${q.choice_1}</textarea>
+        </div>
+        <div class="form-group"
+          <label for="q-choice_2">Choice 2</label>
+          <textarea id="q-choice_2" rows="2" required>${q.choice_2}</textarea>
+        </div>
+        <div class="form-group"
+          <label for="q-choice_3">Choice 3</label>
+          <textarea id="q-choice_3" rows="2" required>${q.choice_3}</textarea>
+        </div>
+        <div class="form-group"
+          <label for="q-choice_4">Choice 4</label>
+          <textarea id="q-choice_4" rows="2" required>${q.choice_4}</textarea>
+        </div>
+        <!-- <div class="form-group"> -->
+        <!--   <label for="q-solution">Solution</label> -->
+        <!--   <textarea id="q-solution" rows="1" required>${q.solution}</textarea> -->
+        <!-- </div> -->
         <div class="form-group">
-          <label for="q-answer">Answer</label>
-          <textarea id="q-answer" rows="4" required>${q.answer}</textarea>
+          <label for="q-solution">Solution</label>
+          <input type="number" id="q-solution" value="${q.solution}" required />
         </div>
         <div class="form-group">
           <label for="q-keywords">Keywords (comma-separated)</label>
@@ -339,7 +359,11 @@ async function showQuestionForm(qId) {
 
     const body = new FormData();
     body.append("question", document.getElementById("q-question").value);
-    body.append("answer", document.getElementById("q-answer").value);
+    body.append("choice_1", document.getElementById("q-choice_1").value);
+    body.append("choice_2", document.getElementById("q-choice_2").value);
+    body.append("choice_3", document.getElementById("q-choice_3").value);
+    body.append("choice_4", document.getElementById("q-choice_4").value);
+    body.append("solution", document.getElementById("q-solution").value);
     body.append("keywords", document.getElementById("q-keywords").value);
     const imageFile = document.getElementById("q-image").files[0];
     if (imageFile) body.append("image", imageFile);

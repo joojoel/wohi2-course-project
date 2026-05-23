@@ -125,9 +125,10 @@ router.get("/:questionId", async (req, res) => {
 
 // POST /questions
 // Create a new question
-router.post("/", upload.single("image"), async (req, res) => {
-    const { question, choice_1, choice_2, choice_3, choice_4, solution, keywords } = req.body;
-
+router.post("/",upload.single("image"), async (req, res) => {
+    const { question, choice_1, choice_2, choice_3, choice_4, keywords } = req.body;
+    const solution = parseInt(req.body.solution) // Solution must be integer
+    
     if (!question || !choice_1 || !choice_2 || !choice_3 || !choice_4 || !solution) {
         return res.status(400).json({
             msg: "A question, 4 choices and a solution are required."
@@ -187,7 +188,10 @@ router.post("/:questionId/like", async (req, res) => {
 // Replace a question
 router.put("/:questionId", upload.single("image"), isOwner, async (req, res) => {
     const questionId = Number(req.params.questionId);
-    const { question, choice_1, choice_2, choice_3, choice_4, solution, keywords } = req.body;
+    
+    const { question, choice_1, choice_2, choice_3, choice_4, keywords } = req.body;
+    const solution = parseInt(req.body.solution) // Solution must be integer
+    
     const existingQuestion = await prisma.question.findUnique({ where: { id: questionId } });
     if (!existingQuestion) {
         return res.status(404).json({ message: "Question not found" });

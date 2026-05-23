@@ -1,4 +1,5 @@
 import requests
+import sys
 
 creds = {"email": "test@gmail.com", "password": "testpass"}
 token = requests.post("http://localhost:3000/api/auth/login", json=creds).json()["token"]
@@ -14,7 +15,12 @@ data = {
     "keywords": ["test2"],
 }
 
-response = requests.put("http://localhost:3000/api/questions/1", headers=headers, json=data)
-print(response.text)
-response = requests.put("http://localhost:3000/api/questions/5", headers=headers, json=data)
-print(response.text)
+if (len(sys.argv) > 1):
+    url = f"http://localhost:3000/api/questions{sys.argv[1]}"
+    print("Using url", url)
+    response = requests.put(url, headers=headers, json=data)
+else:
+    response = requests.put("http://localhost:3000/api/questions/1", headers=headers, json=data)
+    print(response.text)
+    response = requests.put("http://localhost:3000/api/questions/5", headers=headers, json=data)
+    print(response.text)
