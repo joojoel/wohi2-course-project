@@ -20,7 +20,7 @@ model User {
   password   String  @db.VarChar(255)
   name       String  @db.VarChar(100)
   questions  Question[]
-  likes      Like[]
+  plays      Play[]
   @@map("users")
 }
 
@@ -35,18 +35,20 @@ model Question {
   keywords    Keyword[]
   userId      Int
   user        User     @relation(fields: [userId], references: [id])
-  likes       Like[]
+  plays       Play[]
   imageUrl    String?  @db.VarChar(255)
   @@map("questions")
 }
 
-model Like {
+model Play {
   id            Int       @id @default(autoincrement())
   createdAt     DateTime  @default(now())
   userId        Int
   user          User      @relation(fields: [userId], references: [id])
   questionId    Int
   question      Question  @relation(fields: [questionId], references: [id])
+  answer        Int
+  correct       Boolean
   @@unique([userId, questionId])
-  @@map("likes")
+  @@map("plays")
 }

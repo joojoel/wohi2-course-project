@@ -393,6 +393,10 @@ async function playQuestion(qId) {
       <a href="#" id="back-btn" class="back-link">&larr; Back to questions</a>
       <div class="question-form-wrapper" style="text-align:center">
         <div class="play-question-text">${q.question}</div>
+        <div>1. ${q.choice_1}</div>
+        <div>2. ${q.choice_2}</div>
+        <div>3. ${q.choice_3}</div>
+        <div>4. ${q.choice_4}</div>
         ${q.imageUrl ? `<img class="question-image" src="${q.imageUrl}" alt="" style="margin:0 auto 1rem">` : ""}
         ${
           q.keywords && q.keywords.length
@@ -402,7 +406,7 @@ async function playQuestion(qId) {
         <form id="play-form" style="text-align:left">
           <div class="form-group">
             <label for="play-answer">Your answer</label>
-            <textarea id="play-answer" rows="3" required></textarea>
+            <input type="number" id="play-answer" required />
           </div>
           <div style="text-align:center">
             <button type="submit" class="btn btn-play" style="padding:0.7rem 2.5rem;font-size:1rem">Submit</button>
@@ -437,7 +441,7 @@ async function playQuestion(qId) {
         } else {
           resultEl.innerHTML = `
             <div class="play-result incorrect">
-              Incorrect! The answer was: <strong>${result.correctAnswer}</strong>
+              Incorrect! The answer was: <strong>${result.solution}</strong>
             </div>`;
         }
       } catch (err) {
