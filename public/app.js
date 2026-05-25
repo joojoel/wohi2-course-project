@@ -393,10 +393,6 @@ async function playQuestion(qId) {
       <a href="#" id="back-btn" class="back-link">&larr; Back to questions</a>
       <div class="question-form-wrapper" style="text-align:center">
         <div class="play-question-text">${q.question}</div>
-        <div>1. ${q.choice_1}</div>
-        <div>2. ${q.choice_2}</div>
-        <div>3. ${q.choice_3}</div>
-        <div>4. ${q.choice_4}</div>
         ${q.imageUrl ? `<img class="question-image" src="${q.imageUrl}" alt="" style="margin:0 auto 1rem">` : ""}
         ${
           q.keywords && q.keywords.length
@@ -409,6 +405,10 @@ async function playQuestion(qId) {
             <input type="number" id="play-answer" required />
           </div>
           <div style="text-align:center">
+            <button id="1" type="click" class="btn btn-play" style="padding:0.7rem 2.5rem;font-size:1rem">1. ${q.choice_1}</button>
+            <button id="2" type="click" class="btn btn-play" style="padding:0.7rem 2.5rem;font-size:1rem">2. ${q.choice_2}</button>
+            <button id="3" type="click" class="btn btn-play" style="padding:0.7rem 2.5rem;font-size:1rem">3. ${q.choice_3}</button>
+            <button id="4" type="click" class="btn btn-play" style="padding:0.7rem 2.5rem;font-size:1rem">4. ${q.choice_4}</button>
             <button type="submit" class="btn btn-play" style="padding:0.7rem 2.5rem;font-size:1rem">Submit</button>
           </div>
         </form>
@@ -420,15 +420,15 @@ async function playQuestion(qId) {
       e.preventDefault();
       loadQuestions();
     });
-
-    document.getElementById("play-form").addEventListener("submit", async (e) => {
+      
+    document.getElementById("play-form").addEventListener("click", async (e) => {
       e.preventDefault();
       const errorEl = document.getElementById("play-error");
       const resultEl = document.getElementById("play-result");
       errorEl.textContent = "";
       resultEl.innerHTML = "";
 
-      const answer = document.getElementById("play-answer").value;
+      const answer = e.target.id
 
       try {
         const result = await apiFetch(`${CONFIG.ROUTES.QUESTIONS}/${qId}/play`, {
