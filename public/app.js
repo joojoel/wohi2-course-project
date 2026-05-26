@@ -3,131 +3,131 @@ let isRegisterMode = false;
 
 // --- Helpers ---
 function getCurrentUserId() {
-  const token = getToken();
-  if (!token) return null;
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    return payload.userId;
-  } catch {
-    return null;
-  }
+    const token = getToken();
+    if (!token) return null;
+    try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        return payload.userId;
+    } catch {
+        return null;
+    }
 }
 
 function getToken() {
-  return localStorage.getItem(CONFIG.STORAGE_KEY);
+    return localStorage.getItem(CONFIG.STORAGE_KEY);
 }
 
 function setToken(token) {
-  localStorage.setItem(CONFIG.STORAGE_KEY, token);
+    localStorage.setItem(CONFIG.STORAGE_KEY, token);
 }
 
 function removeToken() {
-  localStorage.removeItem(CONFIG.STORAGE_KEY);
+    localStorage.removeItem(CONFIG.STORAGE_KEY);
 }
 
 async function apiFetch(route, options = {}) {
-  const token = getToken();
-  const isFormData = options.body instanceof FormData;
-  const headers = { ...options.headers };
-  if (!isFormData) headers["Content-Type"] = "application/json";
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-  const res = await fetch(`${CONFIG.API_URL}${route}`, { ...options, headers });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || data.msg || "Request failed");
-  return data;
+    const token = getToken();
+    const isFormData = options.body instanceof FormData;
+    const headers = { ...options.headers };
+    if (!isFormData) headers["Content-Type"] = "application/json";
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+    const res = await fetch(`${CONFIG.API_URL}${route}`, { ...options, headers });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || data.msg || "Request failed");
+    return data;
 }
 
 // --- Auth ---
 function showAuth() {
-  document.getElementById("auth-section").style.display = "block";
-  document.getElementById("app-section").style.display = "none";
-  document.getElementById("logout-btn").style.display = "none";
-  renderAuthForm();
+    document.getElementById("auth-section").style.display = "block";
+    document.getElementById("app-section").style.display = "none";
+    document.getElementById("logout-btn").style.display = "none";
+    renderAuthForm();
 }
 
 function renderAuthForm() {
-  const fields = isRegisterMode ? CONFIG.FIELDS.REGISTER : CONFIG.FIELDS.LOGIN;
-  const title = isRegisterMode ? "Sign Up" : "Log In";
-  const switchText = isRegisterMode
-    ? 'Already have an account? <a href="#" id="switch-mode">Log in</a>'
-    : 'Don\'t have an account? <a href="#" id="switch-mode">Sign up</a>';
+    const fields = isRegisterMode ? CONFIG.FIELDS.REGISTER : CONFIG.FIELDS.LOGIN;
+    const title = isRegisterMode ? "Sign Up" : "Log In";
+    const switchText = isRegisterMode
+        ? 'Already have an account? <a href="#" id="switch-mode">Log in</a>'
+        : 'Don\'t have an account? <a href="#" id="switch-mode">Sign up</a>';
 
-  const formHTML = `
+    const formHTML = `
     <h2>${title}</h2>
     <form id="auth-form">
       ${fields
-        .map((f) => {
-          const type = f === "password" ? "password" : f === "email" ? "email" : "text";
-          const label = f.charAt(0).toUpperCase() + f.slice(1);
-          return `
+            .map((f) => {
+                const type = f === "password" ? "password" : f === "email" ? "email" : "text";
+                const label = f.charAt(0).toUpperCase() + f.slice(1);
+                return `
           <div class="form-group">
             <label for="${f}">${label}</label>
             <input type="${type}" id="${f}" name="${f}" required />
           </div>`;
-        })
-        .join("")}
+            })
+            .join("")}
       <button type="submit">${title}</button>
     </form>
     <p class="switch-text">${switchText}</p>
     <p id="auth-error" class="error"></p>
   `;
 
-  document.getElementById("auth-section").innerHTML = formHTML;
-  document.getElementById("auth-form").addEventListener("submit", handleAuth);
-  document.getElementById("switch-mode").addEventListener("click", (e) => {
-    e.preventDefault();
-    isRegisterMode = !isRegisterMode;
-    renderAuthForm();
-  });
+    document.getElementById("auth-section").innerHTML = formHTML;
+    document.getElementById("auth-form").addEventListener("submit", handleAuth);
+    document.getElementById("switch-mode").addEventListener("click", (e) => {
+        e.preventDefault();
+        isRegisterMode = !isRegisterMode;
+        renderAuthForm();
+    });
 }
 
 async function handleAuth(e) {
-  e.preventDefault();
-  const errorEl = document.getElementById("auth-error");
-  errorEl.textContent = "";
+    e.preventDefault();
+    const errorEl = document.getElementById("auth-error");
+    errorEl.textContent = "";
 
-  const fields = isRegisterMode ? CONFIG.FIELDS.REGISTER : CONFIG.FIELDS.LOGIN;
-  const route = isRegisterMode ? CONFIG.ROUTES.REGISTER : CONFIG.ROUTES.LOGIN;
+    const fields = isRegisterMode ? CONFIG.FIELDS.REGISTER : CONFIG.FIELDS.LOGIN;
+    const route = isRegisterMode ? CONFIG.ROUTES.REGISTER : CONFIG.ROUTES.LOGIN;
 
-  const body = {};
-  fields.forEach((f) => {
-    body[f] = document.getElementById(f).value;
-  });
-
-  try {
-    const data = await apiFetch(route, {
-      method: "POST",
-      body: JSON.stringify(body),
+    const body = {};
+    fields.forEach((f) => {
+        body[f] = document.getElementById(f).value;
     });
-    setToken(data.token);
-    showApp();
-  } catch (err) {
-    errorEl.textContent = err.message;
-  }
+
+    try {
+        const data = await apiFetch(route, {
+            method: "POST",
+            body: JSON.stringify(body),
+        });
+        setToken(data.token);
+        showApp();
+    } catch (err) {
+        errorEl.textContent = err.message;
+    }
 }
 
 // --- App ---
 async function showApp() {
-  document.getElementById("auth-section").style.display = "none";
-  document.getElementById("app-section").style.display = "block";
-  document.getElementById("logout-btn").style.display = "inline-block";
-  await loadQuestions();
+    document.getElementById("auth-section").style.display = "none";
+    document.getElementById("app-section").style.display = "block";
+    document.getElementById("logout-btn").style.display = "inline-block";
+    await loadQuestions();
 }
 
 async function loadQuestions(keyword = "", page = 1) {
-  const container = document.getElementById("questions-container");
-  container.innerHTML = '<p class="loading">Loading questions...</p>';
+    const container = document.getElementById("questions-container");
+    container.innerHTML = '<p class="loading">Loading questions...</p>';
 
-  try {
-    const params = new URLSearchParams({ page, limit: CONFIG.QUESTIONS_PER_PAGE });
-    if (keyword) params.set("keyword", keyword);
-    const result = await apiFetch(`${CONFIG.ROUTES.QUESTIONS}?${params}`);
-    const { data: questions, total, totalPages } = result;
-    const currentUserId = getCurrentUserId();
+    try {
+        const params = new URLSearchParams({ page, limit: CONFIG.QUESTIONS_PER_PAGE });
+        if (keyword) params.set("keyword", keyword);
+        const result = await apiFetch(`${CONFIG.ROUTES.QUESTIONS}?${params}`);
+        const { data: questions, total, totalPages } = result;
+        const currentUserId = getCurrentUserId();
 
-    const solvedCount = questions.filter((q) => q[CONFIG.API_FIELDS.SOLVED]).length;
+        const solvedCount = questions.filter((q) => q[CONFIG.API_FIELDS.SOLVED]).length;
 
-    let html = `
+        let html = `
       <div class="score-bar">
         <div class="score-item">
           <div class="score-value">${total}</div>
@@ -147,160 +147,156 @@ async function loadQuestions(keyword = "", page = 1) {
         </div>
       </div>`;
 
-    if (questions.length === 0) {
-      html += '<p class="empty-state">No questions found. Create one to get started!</p>';
-    } else {
-      html += questions
-        .map(
-          (q) => `
+        if (questions.length === 0) {
+            html += '<p class="empty-state">No questions found. Create one to get started!</p>';
+        } else {
+            html += questions
+                .map(
+                    (q) => `
         <article class="question-card ${q[CONFIG.API_FIELDS.SOLVED] ? "solved-card" : ""}">
           <h3>
             <a href="#" class="question-link" data-id="${q.id}">${q.question}</a>
             ${q[CONFIG.API_FIELDS.SOLVED] ? `<span class="badge-solved">Solved</span>` : ""}
           </h3>
-          ${
-            q.keywords && q.keywords.length
-              ? `<div class="question-keywords">${q.keywords.map((k) => `<span class="keyword">${k}</span>`).join("")}</div>`
-              : ""
-          }
+          ${q.keywords && q.keywords.length
+                            ? `<div class="question-keywords">${q.keywords.map((k) => `<span class="keyword">${k}</span>`).join("")}</div>`
+                            : ""
+                        }
           <div class="question-actions">
             <span>
               <button class="btn btn-play" data-id="${q.id}">Play</button>
               <a href="#" class="read-more" data-id="${q.id}">See answer</a>
             </span>
-            ${
-              q.userId === currentUserId
-                ? `<span class="owner-actions">
+            ${q.userId === currentUserId
+                            ? `<span class="owner-actions">
                     <button class="btn btn-edit" data-id="${q.id}">Edit</button>
                     <button class="btn btn-delete" data-id="${q.id}">Delete</button>
                   </span>`
-                : ""
-            }
+                            : ""
+                        }
           </div>
         </article>`
-        )
-        .join("");
-    }
+                )
+                .join("");
+        }
 
-    if (totalPages > 1) {
-      html += `
+        if (totalPages > 1) {
+            html += `
         <div class="pagination">
           <button class="btn btn-page" id="prev-btn" ${page <= 1 ? "disabled" : ""}>Previous</button>
           <span class="page-info">Page ${page} of ${totalPages}</span>
           <button class="btn btn-page" id="next-btn" ${page >= totalPages ? "disabled" : ""}>Next</button>
         </div>`;
+        }
+
+        container.innerHTML = html;
+
+        document.getElementById("new-question-btn").addEventListener("click", () => showQuestionForm());
+
+        document.getElementById("search-btn").addEventListener("click", () => {
+            loadQuestions(document.getElementById("keyword-input").value.trim(), 1);
+        });
+
+        document.getElementById("keyword-input").addEventListener("keydown", (e) => {
+            if (e.key === "Enter") loadQuestions(e.target.value.trim(), 1);
+        });
+
+        const clearBtn = document.getElementById("clear-btn");
+        if (clearBtn) clearBtn.addEventListener("click", () => loadQuestions());
+
+        const prevBtn = document.getElementById("prev-btn");
+        if (prevBtn) prevBtn.addEventListener("click", () => loadQuestions(keyword, page - 1));
+
+        const nextBtn = document.getElementById("next-btn");
+        if (nextBtn) nextBtn.addEventListener("click", () => loadQuestions(keyword, page + 1));
+
+        container.querySelectorAll(".question-link, .read-more").forEach((el) => {
+            el.addEventListener("click", (e) => {
+                e.preventDefault();
+                loadQuestionDetail(el.dataset.id);
+            });
+        });
+
+        container.querySelectorAll(".btn-edit").forEach((el) => {
+            el.addEventListener("click", () => showQuestionForm(el.dataset.id));
+        });
+
+        container.querySelectorAll(".btn-delete").forEach((el) => {
+            el.addEventListener("click", () => deleteQuestion(el.dataset.id));
+        });
+
+        container.querySelectorAll(".btn-play").forEach((el) => {
+            el.addEventListener("click", () => playQuestion(el.dataset.id));
+        });
+    } catch (err) {
+        if (err.message === "No token provided" || err.message === "Invalid or expired token") {
+            removeToken();
+            showAuth();
+            return;
+        }
+        container.innerHTML = `<p class="error">${err.message}</p>`;
     }
-
-    container.innerHTML = html;
-
-    document.getElementById("new-question-btn").addEventListener("click", () => showQuestionForm());
-
-    document.getElementById("search-btn").addEventListener("click", () => {
-      loadQuestions(document.getElementById("keyword-input").value.trim(), 1);
-    });
-
-    document.getElementById("keyword-input").addEventListener("keydown", (e) => {
-      if (e.key === "Enter") loadQuestions(e.target.value.trim(), 1);
-    });
-
-    const clearBtn = document.getElementById("clear-btn");
-    if (clearBtn) clearBtn.addEventListener("click", () => loadQuestions());
-
-    const prevBtn = document.getElementById("prev-btn");
-    if (prevBtn) prevBtn.addEventListener("click", () => loadQuestions(keyword, page - 1));
-
-    const nextBtn = document.getElementById("next-btn");
-    if (nextBtn) nextBtn.addEventListener("click", () => loadQuestions(keyword, page + 1));
-
-    container.querySelectorAll(".question-link, .read-more").forEach((el) => {
-      el.addEventListener("click", (e) => {
-        e.preventDefault();
-        loadQuestionDetail(el.dataset.id);
-      });
-    });
-
-    container.querySelectorAll(".btn-edit").forEach((el) => {
-      el.addEventListener("click", () => showQuestionForm(el.dataset.id));
-    });
-
-    container.querySelectorAll(".btn-delete").forEach((el) => {
-      el.addEventListener("click", () => deleteQuestion(el.dataset.id));
-    });
-
-    container.querySelectorAll(".btn-play").forEach((el) => {
-      el.addEventListener("click", () => playQuestion(el.dataset.id));
-    });
-  } catch (err) {
-    if (err.message === "No token provided" || err.message === "Invalid or expired token") {
-      removeToken();
-      showAuth();
-      return;
-    }
-    container.innerHTML = `<p class="error">${err.message}</p>`;
-  }
 }
 
 async function loadQuestionDetail(qId) {
-  const container = document.getElementById("questions-container");
-  container.innerHTML = '<p class="loading">Loading...</p>';
+    const container = document.getElementById("questions-container");
+    container.innerHTML = '<p class="loading">Loading...</p>';
 
-  try {
-    const q = await apiFetch(`${CONFIG.ROUTES.QUESTIONS}/${qId}`);
-    const currentUserId = getCurrentUserId();
-    const isOwner = q.userId === currentUserId;
+    try {
+        const q = await apiFetch(`${CONFIG.ROUTES.QUESTIONS}/${qId}`);
+        const currentUserId = getCurrentUserId();
+        const isOwner = q.userId === currentUserId;
 
-    container.innerHTML = `
+        container.innerHTML = `
       <a href="#" id="back-btn" class="back-link">&larr; Back to questions</a>
       <article class="question-card question-detail">
         <h3>${q.question} ${q[CONFIG.API_FIELDS.SOLVED] ? `<span class="badge-solved">Solved</span>` : ""}</h3>
         <p class="question-meta">by ${q.userName || "Unknown"}</p>
         ${q.imageUrl ? `<img class="question-image" src="${q.imageUrl}" alt="">` : ""}
         <p class="question-answer">${q.answer}</p>
-        ${
-          q.keywords && q.keywords.length
-            ? `<div class="question-keywords">${q.keywords.map((k) => `<span class="keyword">${k}</span>`).join("")}</div>`
-            : ""
-        }
-        ${
-          isOwner
-            ? `<div class="question-actions detail-actions">
+        ${q.keywords && q.keywords.length
+                ? `<div class="question-keywords">${q.keywords.map((k) => `<span class="keyword">${k}</span>`).join("")}</div>`
+                : ""
+            }
+        ${isOwner
+                ? `<div class="question-actions detail-actions">
                 <button class="btn btn-edit" id="detail-edit-btn">Edit</button>
                 <button class="btn btn-delete" id="detail-delete-btn">Delete</button>
               </div>`
-            : ""
-        }
+                : ""
+            }
       </article>`;
 
-    document.getElementById("back-btn").addEventListener("click", (e) => {
-      e.preventDefault();
-      loadQuestions();
-    });
+        document.getElementById("back-btn").addEventListener("click", (e) => {
+            e.preventDefault();
+            loadQuestions();
+        });
 
-    if (isOwner) {
-      document.getElementById("detail-edit-btn").addEventListener("click", () => showQuestionForm(qId));
-      document.getElementById("detail-delete-btn").addEventListener("click", () => deleteQuestion(qId));
+        if (isOwner) {
+            document.getElementById("detail-edit-btn").addEventListener("click", () => showQuestionForm(qId));
+            document.getElementById("detail-delete-btn").addEventListener("click", () => deleteQuestion(qId));
+        }
+    } catch (err) {
+        container.innerHTML = `<p class="error">${err.message}</p>`;
     }
-  } catch (err) {
-    container.innerHTML = `<p class="error">${err.message}</p>`;
-  }
 }
 
 // --- Create / Edit ---
 async function showQuestionForm(qId) {
-  const container = document.getElementById("questions-container");
-  const isEdit = !!qId;
-  let q = { question: "", choice_1: "", choice_2: "", choice_3: "", choice_4: "", solution: null, keywords: [] };
+    const container = document.getElementById("questions-container");
+    const isEdit = !!qId;
+    let q = { question: "", choice_1: "", choice_2: "", choice_3: "", choice_4: "", solution: null, keywords: [] };
 
-  if (isEdit) {
-    try {
-      q = await apiFetch(`${CONFIG.ROUTES.QUESTIONS}/${qId}`);
-    } catch (err) {
-      container.innerHTML = `<p class="error">${err.message}</p>`;
-      return;
+    if (isEdit) {
+        try {
+            q = await apiFetch(`${CONFIG.ROUTES.QUESTIONS}/${qId}`);
+        } catch (err) {
+            container.innerHTML = `<p class="error">${err.message}</p>`;
+            return;
+        }
     }
-  }
 
-  container.innerHTML = `
+    container.innerHTML = `
     <a href="#" id="back-btn" class="back-link">&larr; Back to questions</a>
     <div class="question-form-wrapper">
       <h2>${isEdit ? "Edit Question" : "New Question"}</h2>
@@ -347,135 +343,139 @@ async function showQuestionForm(qId) {
       <p id="question-form-error" class="error"></p>
     </div>`;
 
-  document.getElementById("back-btn").addEventListener("click", (e) => {
-    e.preventDefault();
-    loadQuestions();
-  });
+    document.getElementById("back-btn").addEventListener("click", (e) => {
+        e.preventDefault();
+        loadQuestions();
+    });
 
-  document.getElementById("question-form").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const errorEl = document.getElementById("question-form-error");
-    errorEl.textContent = "";
+    document.getElementById("question-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const errorEl = document.getElementById("question-form-error");
+        errorEl.textContent = "";
 
-    const body = new FormData();
-    body.append("question", document.getElementById("q-question").value);
-    body.append("choice_1", document.getElementById("q-choice_1").value);
-    body.append("choice_2", document.getElementById("q-choice_2").value);
-    body.append("choice_3", document.getElementById("q-choice_3").value);
-    body.append("choice_4", document.getElementById("q-choice_4").value);
-    body.append("solution", document.getElementById("q-solution").value);
-    body.append("keywords", document.getElementById("q-keywords").value);
-    const imageFile = document.getElementById("q-image").files[0];
-    if (imageFile) body.append("image", imageFile);
+        const body = new FormData();
+        body.append("question", document.getElementById("q-question").value);
+        body.append("choice_1", document.getElementById("q-choice_1").value);
+        body.append("choice_2", document.getElementById("q-choice_2").value);
+        body.append("choice_3", document.getElementById("q-choice_3").value);
+        body.append("choice_4", document.getElementById("q-choice_4").value);
+        body.append("solution", document.getElementById("q-solution").value);
 
-    try {
-      if (isEdit) {
-        await apiFetch(`${CONFIG.ROUTES.QUESTIONS}/${qId}`, { method: "PUT", body });
-      } else {
-        await apiFetch(CONFIG.ROUTES.QUESTIONS, { method: "POST", body });
-      }
-      loadQuestions();
-    } catch (err) {
-      errorEl.textContent = err.message;
-    }
-  });
+        // Remove whitespaces and return array by comma
+        const tf_keywords = document.getElementById("q-keywords").value.replace(/\s/g, "").split(",");
+
+        for (var i = 0; i < tf_keywords.length; i++) {
+            body.append("keywords", tf_keywords[i])
+        }
+        
+        const imageFile = document.getElementById("q-image").files[0];
+        if (imageFile) body.append("image", imageFile);
+
+        try {
+            if (isEdit) {
+                await apiFetch(`${CONFIG.ROUTES.QUESTIONS}/${qId}`, { method: "PUT", body });
+            } else {
+                await apiFetch(CONFIG.ROUTES.QUESTIONS, { method: "POST", body });
+            }
+            loadQuestions();
+        } catch (err) {
+            errorEl.textContent = err.message;
+        }
+    });
 }
 
 // --- Play ---
 async function playQuestion(qId) {
-  const container = document.getElementById("questions-container");
-  container.innerHTML = '<p class="loading">Loading...</p>';
+    const container = document.getElementById("questions-container");
+    container.innerHTML = '<p class="loading">Loading...</p>';
 
-  try {
-    const q = await apiFetch(`${CONFIG.ROUTES.QUESTIONS}/${qId}`);
+    try {
+        const q = await apiFetch(`${CONFIG.ROUTES.QUESTIONS}/${qId}`);
 
-    container.innerHTML = `
+        container.innerHTML = `
       <a href="#" id="back-btn" class="back-link">&larr; Back to questions</a>
       <div class="question-form-wrapper" style="text-align:center">
         <div class="play-question-text">${q.question}</div>
-        ${q.imageUrl ? `<img class="question-image" src="${q.imageUrl}" alt="" style="margin:0 auto 1rem">` : ""}
-        ${
-          q.keywords && q.keywords.length
-            ? `<div class="question-keywords" style="justify-content:center;margin-bottom:1.5rem">${q.keywords.map((k) => `<span class="keyword">${k}</span>`).join("")}</div>`
-            : ""
-        }
+        <div class="play-image">
+          ${q.imageUrl ? `<img class="question-image" src="${q.imageUrl}" alt="" style="margin:0 auto 1rem">` : ""}
+        </div>
         <form id="play-form" style="text-align:left">
-          <div class="form-group">
-            <label for="play-answer">Your answer</label>
-            <input type="number" id="play-answer" required />
-          </div>
           <div style="text-align:center">
             <button id="1" type="click" class="btn btn-play" style="padding:0.7rem 2.5rem;font-size:1rem">1. ${q.choice_1}</button>
             <button id="2" type="click" class="btn btn-play" style="padding:0.7rem 2.5rem;font-size:1rem">2. ${q.choice_2}</button>
             <button id="3" type="click" class="btn btn-play" style="padding:0.7rem 2.5rem;font-size:1rem">3. ${q.choice_3}</button>
             <button id="4" type="click" class="btn btn-play" style="padding:0.7rem 2.5rem;font-size:1rem">4. ${q.choice_4}</button>
-            <button type="submit" class="btn btn-play" style="padding:0.7rem 2.5rem;font-size:1rem">Submit</button>
           </div>
         </form>
+        <div class="play-keywords">
+          ${q.keywords && q.keywords.length
+                ? `<div class="question-keywords" style="justify-content:center;margin-bottom:1.5rem">${q.keywords.map((k) => `<span class="keyword">${k}</span>`).join("")}</div>`
+                : ""
+            }
+        </div>
         <div id="play-result"></div>
         <p id="play-error" class="error"></p>
       </div>`;
 
-    document.getElementById("back-btn").addEventListener("click", (e) => {
-      e.preventDefault();
-      loadQuestions();
-    });
-      
-    document.getElementById("play-form").addEventListener("click", async (e) => {
-      e.preventDefault();
-      const errorEl = document.getElementById("play-error");
-      const resultEl = document.getElementById("play-result");
-      errorEl.textContent = "";
-      resultEl.innerHTML = "";
-
-      const answer = e.target.id
-
-      try {
-        const result = await apiFetch(`${CONFIG.ROUTES.QUESTIONS}/${qId}/play`, {
-          method: "POST",
-          body: JSON.stringify({ answer }),
+        document.getElementById("back-btn").addEventListener("click", (e) => {
+            e.preventDefault();
+            loadQuestions();
         });
 
-        if (result.correct) {
-          resultEl.innerHTML = `<div class="play-result correct">Correct!</div>`;
-        } else {
-          resultEl.innerHTML = `
+        document.getElementById("play-form").addEventListener("click", async (e) => {
+            e.preventDefault();
+            const errorEl = document.getElementById("play-error");
+            const resultEl = document.getElementById("play-result");
+            errorEl.textContent = "";
+            resultEl.innerHTML = "";
+            const answer = e.target.id
+
+            try {
+                const result = await apiFetch(`${CONFIG.ROUTES.QUESTIONS}/${qId}/play`, {
+                    method: "POST",
+                    body: JSON.stringify({ answer }),
+                });
+
+                if (result.correct) {
+                    resultEl.innerHTML = `<div class="play-result correct">Correct!</div>`;
+                } else {
+                    resultEl.innerHTML = `
             <div class="play-result incorrect">
               Incorrect! The answer was: <strong>${result.solution}</strong>
             </div>`;
-        }
-      } catch (err) {
-        errorEl.textContent = err.message;
-      }
-    });
-  } catch (err) {
-    container.innerHTML = `<p class="error">${err.message}</p>`;
-  }
+                }
+            } catch (err) {
+                errorEl.textContent = err.message;
+            }
+        });
+    } catch (err) {
+        container.innerHTML = `<p class="error">${err.message}</p>`;
+    }
 }
 
 // --- Delete ---
 async function deleteQuestion(qId) {
-  if (!confirm("Are you sure you want to delete this question?")) return;
+    if (!confirm("Are you sure you want to delete this question?")) return;
 
-  try {
-    await apiFetch(`${CONFIG.ROUTES.QUESTIONS}/${qId}`, { method: "DELETE" });
-    loadQuestions();
-  } catch (err) {
-    alert(err.message);
-  }
+    try {
+        await apiFetch(`${CONFIG.ROUTES.QUESTIONS}/${qId}`, { method: "DELETE" });
+        loadQuestions();
+    } catch (err) {
+        alert(err.message);
+    }
 }
 
 function handleLogout() {
-  removeToken();
-  showAuth();
+    removeToken();
+    showAuth();
 }
 
 // --- Init ---
 document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("logout-btn").addEventListener("click", handleLogout);
-  if (getToken()) {
-    showApp();
-  } else {
-    showAuth();
-  }
+    document.getElementById("logout-btn").addEventListener("click", handleLogout);
+    if (getToken()) {
+        showApp();
+    } else {
+        showAuth();
+    }
 });

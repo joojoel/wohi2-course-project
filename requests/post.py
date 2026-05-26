@@ -13,7 +13,7 @@ data = {
     "choice_3": "Test",
     "choice_4": "Test",
     "solution": "1",
-    "keywords": ["test"],
+    "keywords": ["test", "test2"],
 }
 
 if (len(sys.argv) > 1):

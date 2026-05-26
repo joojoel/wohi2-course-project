@@ -71,7 +71,7 @@ router.get("/", async (req, res) => {
         : {};
 
     const page = Math.max(1, parseInt(req.query.page) || 1);
-    const limit = Math.max(1, Math.min(100, parseInt(req.query.limit) || 5));
+    const limit = Math.max(1, Math.min(100, parseInt(req.query.limit) || 50));
     const skip = (page - 1) * limit;
 
     const [filteredQuestions, total] = await Promise.all([
@@ -126,7 +126,8 @@ router.get("/:questionId", async (req, res) => {
 // POST /questions
 // Create a new question
 router.post("/",upload.single("image"), async (req, res) => {
-    const { question, choice_1, choice_2, choice_3, choice_4, keywords } = req.body;
+    const { question, choice_1, choice_2, choice_3, choice_4, keywords} = req.body;
+    
     const solution = parseInt(req.body.solution) // Solution must be integer
     
     if (!question || !choice_1 || !choice_2 || !choice_3 || !choice_4 || !solution) {
