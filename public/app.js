@@ -325,9 +325,23 @@ async function showQuestionForm(qId) {
         <!--   <label for="q-solution">Solution</label> -->
         <!--   <textarea id="q-solution" rows="1" required>${q.solution}</textarea> -->
         <!-- </div> -->
-        <div class="form-group">
-          <label for="q-solution">Solution</label>
-          <input type="number" id="q-solution" value="${q.solution}" required />
+        <div class="radio-buttons">
+          <div>
+            <label for="choice-1">1</label></br>
+            <input type="radio" id="choice-1" name="q-solution" value="1" />
+          </div>
+          <div>
+            <label for="choice-2">2</label></br>
+            <input type="radio" id="choice-2" name="q-solution" value="2" />
+          </div>
+          <div>
+            <label for="choice-3">3</label></br>
+            <input type="radio" id="choice-3" name="q-solution" value="3" />
+          </div>
+          <div>
+            <label for="choice-4">4</label></br>
+            <input type="radio" id="choice-4" name="q-solution" value="4" />
+          </div>
         </div>
         <div class="form-group">
           <label for="q-keywords">Keywords (comma-separated)</label>
@@ -359,7 +373,14 @@ async function showQuestionForm(qId) {
         body.append("choice_2", document.getElementById("q-choice_2").value);
         body.append("choice_3", document.getElementById("q-choice_3").value);
         body.append("choice_4", document.getElementById("q-choice_4").value);
-        body.append("solution", document.getElementById("q-solution").value);
+        const radioButtons = document.querySelectorAll('input[name="q-solution"]');
+        for (const radioButton of radioButtons) {
+            if (radioButton.checked) {
+                body.append("solution", radioButton.value);
+                break;
+            }
+        }
+        debugger;
 
         // Remove whitespaces and return array by comma
         const tf_keywords = document.getElementById("q-keywords").value.replace(/\s/g, "").split(",");
