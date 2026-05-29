@@ -18,8 +18,11 @@ function formatQuestion(question) {
         user: undefined,
         plays: undefined,
         _count: undefined,
+        solved: undefined,
     };
 }
+
+function filterById(jsonObject, id) {return jsonObject.filter(function(jsonObject) {return (jsonObject['id'] == id);})[0];}
 
 // MULTER
 
@@ -43,11 +46,11 @@ const upload = multer({
 });
 
 function parseKeywords(keywords) {
-  if (Array.isArray(keywords)) return keywords;
-  if (typeof keywords === "string") {
-    return keywords.split(",").map((k) => k.trim()).filter(Boolean);
-  }
-  return [];
+    if (Array.isArray(keywords)) return keywords;
+    if (typeof keywords === "string") {
+        return keywords.split(",").map((k) => k.trim()).filter(Boolean);
+    }
+    return [];
 }
 
 router.use((err, req, res, next) => {
@@ -73,10 +76,10 @@ router.get("/", async (req, res) => {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.max(1, Math.min(100, parseInt(req.query.limit) || 50));
     const skip = (page - 1) * limit;
-
+    
     const [filteredQuestions, total] = await Promise.all([
         prisma.question.findMany({
-            where,
+            where, 
             include: {
                 keywords: true,
                 user: true,
@@ -90,8 +93,25 @@ router.get("/", async (req, res) => {
         prisma.question.count({ where }),
     ]);
 
+    const questions_solved = await prisma.play.findMany({
+        where: {
+            correct: true,
+            userId: req.user.userId,
+        },
+        select: { questionId: true },
+    });
+
+    let data = filteredQuestions.map(formatQuestion);
+    
+    for (const key in questions_solved) {
+        const q_id = questions_solved[key].questionId;
+        let q = filterById(data, q_id)
+        if (q)
+            q.solved = true;
+    }
+    
     res.json({
-        data: filteredQuestions.map(formatQuestion),
+        data,
         page,
         limit,
         total,
@@ -168,10 +188,14 @@ router.post("/:questionId/play", async (req, res) => {
 
     const answer = parseInt(req.body.answer)
     const correct = (answer == question.solution) ? true : false; // Better to use strict comparison? (===)
-    
     const play = await prisma.play.upsert({
         where: { userId_questionId: { userId: req.user.userId, questionId } },
-        update: {},
+        update: {
+            // Remove these if you want questions to have single
+            // attempt
+            answer: answer,
+            correct: correct,
+        },
         create: {
             userId: req.user.userId,
             questionId,
@@ -182,10 +206,10 @@ router.post("/:questionId/play", async (req, res) => {
 
     const playCount = await prisma.play.count({ where: { questionId } });
     
-    res.status(201).json({
+    res.status( 201).json({
         id: play.id,
         questionId,
-        //played: true,
+        played: true,
         answer,
         correct,
         playCount,
@@ -248,7 +272,7 @@ router.delete("/:questionId", isOwner, async (req, res) => {
     }
 
     await prisma.question.delete({ where: { id: questionId } })
-
+    
     res.json({
         message: "Question deleted successfully",
         question: formatQuestion(question),

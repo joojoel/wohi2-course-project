@@ -126,7 +126,7 @@ async function loadQuestions(keyword = "", page = 1) {
         const currentUserId = getCurrentUserId();
 
         const solvedCount = questions.filter((q) => q[CONFIG.API_FIELDS.SOLVED]).length;
-
+        
         let html = `
       <div class="score-bar">
         <div class="score-item">
@@ -429,6 +429,7 @@ async function playQuestion(qId) {
             errorEl.textContent = "";
             resultEl.innerHTML = "";
             const answer = e.target.id
+            
 
             try {
                 const result = await apiFetch(`${CONFIG.ROUTES.QUESTIONS}/${qId}/play`, {
@@ -440,9 +441,9 @@ async function playQuestion(qId) {
                     resultEl.innerHTML = `<div class="play-result correct">Correct!</div>`;
                 } else {
                     resultEl.innerHTML = `
-            <div class="play-result incorrect">
-              Incorrect! The answer was: <strong>${result.solution}</strong>
-            </div>`;
+                      <div class="play-result incorrect">
+                        Incorrect! The answer was: <strong>${result.solution}</strong>
+                      </div>`;
                 }
             } catch (err) {
                 errorEl.textContent = err.message;
