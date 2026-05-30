@@ -49,6 +49,7 @@ model Play {
   question      Question  @relation(fields: [questionId], references: [id])
   answer        Int
   correct       Boolean
+  attempts      Int
   @@unique([userId, questionId])
   @@map("plays")
 }

@@ -1,5 +1,6 @@
 # Notes
 
-- Use radial menu for solution input
+- Attempt model
+- Attempt UI
 
 - Test id changes (delete etc.)

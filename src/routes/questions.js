@@ -186,7 +186,7 @@ router.post("/:questionId/play", async (req, res) => {
         return res.status(404).json({ message: "Question not found" });
     }
 
-    const answer = parseInt(req.body.answer)
+    const answer = parseInt(req.body.answer);
     const correct = (answer == question.solution) ? true : false; // Better to use strict comparison? (===)
     const play = await prisma.play.upsert({
         where: { userId_questionId: { userId: req.user.userId, questionId } },
@@ -195,18 +195,20 @@ router.post("/:questionId/play", async (req, res) => {
             // attempt
             answer: answer,
             correct: correct,
+            attempts: {increment: 1},
         },
         create: {
             userId: req.user.userId,
             questionId,
             answer: answer,
-            correct: correct
+            correct: correct,
+            attempts: 1,
         },
     });
 
     const playCount = await prisma.play.count({ where: { questionId } });
     
-    res.status( 201).json({
+    res.status(201).json({
         id: play.id,
         questionId,
         played: true,
@@ -215,6 +217,7 @@ router.post("/:questionId/play", async (req, res) => {
         playCount,
         solution: question.solution,
         createdAt: play.createdAt,
+        attempts: play.attempts,
     });
 });
 
