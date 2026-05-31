@@ -246,6 +246,8 @@ async function loadQuestionDetail(qId) {
         const q = await apiFetch(`${CONFIG.ROUTES.QUESTIONS}/${qId}`);
         const currentUserId = getCurrentUserId();
         const isOwner = q.userId === currentUserId;
+        const str = "choice_".concat(q.solution);
+        const answer = q[str];
 
         container.innerHTML = `
       <a href="#" id="back-btn" class="back-link">&larr; Back to questions</a>
@@ -253,7 +255,7 @@ async function loadQuestionDetail(qId) {
         <h3>${q.question} ${q[CONFIG.API_FIELDS.SOLVED] ? `<span class="badge-solved">Solved</span>` : ""}</h3>
         <p class="question-meta">by ${q.userName || "Unknown"}</p>
         ${q.imageUrl ? `<img class="question-image" src="${q.imageUrl}" alt="">` : ""}
-        <p class="question-answer">${q.answer}</p>
+        <p class="question-answer">${answer}</p>
         ${q.keywords && q.keywords.length
                 ? `<div class="question-keywords">${q.keywords.map((k) => `<span class="keyword">${k}</span>`).join("")}</div>`
                 : ""
