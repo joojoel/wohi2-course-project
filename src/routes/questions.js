@@ -4,6 +4,9 @@ const prisma = require("../lib/prisma");
 const authenticate = require("../middleware/auth");
 const isOwner = require("../middleware/isOwner");
 const path = require("path")
+const multer = require("multer");
+const { NotFoundError, ValidationError } = require("../lib/errors");
+const { z } = require("zod");
 
 // Apply authentication to ALL routes in this router
 router.use(authenticate);
@@ -22,11 +25,28 @@ function formatQuestion(question) {
     };
 }
 
-function filterById(jsonObject, id) {return jsonObject.filter(function(jsonObject) {return (jsonObject['id'] == id);})[0];}
+function filterById(jsonObject, id) {
+    return jsonObject.filter(function (jsonObject) {
+        return (jsonObject['id'] == id);
+    })[0];
+}
+
+// ZOD
+
+
+
+const QuestionInput = z.object({
+    question: z.string().min(1),
+    choice_1: z.string().min(1),
+    choice_2: z.string().min(1),
+    choice_3: z.string().min(1),
+    choice_4: z.string().min(1),
+    keywords: z.union([z.string(), z.array(z.string())]).optional(),
+});
+
+// END ZOD
 
 // MULTER
-
-const multer = require("multer");
 
 const storage = multer.diskStorage({
     destination: path.join(__dirname, "..", "..", "public", "uploads"),
@@ -45,21 +65,19 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 
-function parseKeywords(keywords) {
-    if (Array.isArray(keywords)) return keywords;
-    if (typeof keywords === "string") {
-        return keywords.split(",").map((k) => k.trim()).filter(Boolean);
-    }
-    return [];
-}
+// This is probably not needed?
+// router.use((err, req, res, next) => {
+//     if (err instanceof multer.MulterError ||
+//         err?.message === "Only image files are allowed") {
+//         return res.status(400).json({ msg: err.message });
+//     }
+//     next(err); // pass through to global handler
+// });
 
-router.use((err, req, res, next) => {
-    if (err instanceof multer.MulterError ||
-        err?.message === "Only image files are allowed") {
-        return res.status(400).json({ msg: err.message });
-    }
-    next(err);
-});
+fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith("image/")) cb(null, true);
+    else cb(new ValidationError("Only image files are allowed"));
+},
 
 // END MULTER
 
@@ -135,7 +153,7 @@ router.get("/:questionId", async (req, res) => {
     });
 
     if (!question) {
-        return res.status(404).json({ message: "Question not found" });
+        throw new NotFoundError("Question not found")
     }
 
     res.json(formatQuestion(question));
@@ -145,15 +163,14 @@ router.get("/:questionId", async (req, res) => {
 
 // POST /questions
 // Create a new question
-router.post("/",upload.single("image"), async (req, res) => {
-    const { question, choice_1, choice_2, choice_3, choice_4, keywords} = req.body;
+router.post("/", upload.single("image"), async (req, res) => {
+    // Slides used a single variable for zod data, but this seems to work too
+    const { question, choice_1, choice_2, choice_3, choice_4, keywords} = QuestionInput.parse(req.body);
     
     const solution = parseInt(req.body.solution) // Solution must be integer
     
     if (!question || !choice_1 || !choice_2 || !choice_3 || !choice_4 || !solution) {
-        return res.status(400).json({
-            msg: "A question, 4 choices and a solution are required."
-        });
+        throw new ValidationError("A question, 4 choices and a solution are required.");
     }
 
     const keywordsArray = Array.isArray(keywords) ? keywords : [];
@@ -183,7 +200,7 @@ router.post("/:questionId/play", async (req, res) => {
 
     const question = await prisma.question.findUnique({ where: { id: questionId } });
     if (!question) {
-        return res.status(404).json({ message: "Question not found" });
+        throw new NotFoundError("Question not found");
     }
 
     const answer = parseInt(req.body.answer);
@@ -233,11 +250,11 @@ router.put("/:questionId", upload.single("image"), isOwner, async (req, res) => 
     
     const existingQuestion = await prisma.question.findUnique({ where: { id: questionId } });
     if (!existingQuestion) {
-        return res.status(404).json({ message: "Question not found" });
+        throw new NotFoundError("Question not found");
     }
 
     if (!question || !choice_1 || !choice_2 || !choice_3 || !choice_4 || !solution) {
-        return res.status(400).json({ msg: "Question, 4 answers and a solution are mandatory!" });
+        throw new ValidationError("Question, 4 answers and a solution are mandatory!");
     }
 
     const keywordsArray = Array.isArray(keywords) ? keywords : [];
@@ -271,7 +288,7 @@ router.delete("/:questionId", isOwner, async (req, res) => {
     });
 
     if (!question) {
-        return res.status(404).json({ message: "Question not found" });
+        throw new NotFoundError("Question not found");
     }
 
     await prisma.question.delete({ where: { id: questionId } })
@@ -282,36 +299,6 @@ router.delete("/:questionId", isOwner, async (req, res) => {
     });
 });
 
-// Dislike a question
-// router.delete("/:questionId/like", async (req, res) => {
-//     const questionId = Number(req.params.questionId);
-
-//     const question = await prisma.question.findUnique({ where: { id: questionId } });
-//     if (!question) {
-//         return res.status(404).json({ message: "Question not found" });
-//     }
-
-//     await prisma.like.deleteMany({
-//         where: { userId: req.user.userId, questionId },
-//     });
-
-//     const likeCount = await prisma.like.count({ where: { questionId } });
-
-//     res.json({ questionId, liked: false, likeCount });
-// });
-
 // END DELETE
-
-// router.post("/", upload.single("image"), async (req, res) => {
-//   const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
-//   await prisma.post.create({ data: { ..., imageUrl } });
-// });
-
-// router.put("/:postId", upload.single("image"), isOwner, async (req, res) => {
-//   const data = { ... };
-  
-//   await prisma.post.update({ where: { id }, data });
-// });
-// if (req.file) data.imageUrl = `/uploads/${req.file.filename}`;
 
 module.exports = router;

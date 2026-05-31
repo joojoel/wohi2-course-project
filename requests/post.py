@@ -7,7 +7,7 @@ token = requests.post("http://localhost:3000/api/auth/login", json=creds).json()
 headers = {"Authorization": "Bearer "+token}
 
 data = {
-    "question": "Test",
+    "question": "",
     "choice_1": "Test",
     "choice_2": "Test",
     "choice_3": "Test",
