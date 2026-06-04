@@ -1,0 +1,34 @@
+const request = require("supertest");
+const app = require("../src/app");
+const prisma = require("../src/lib/prisma");
+
+async function resetDb() {
+  await prisma.play.deleteMany();
+  await prisma.question.deleteMany();
+  await prisma.keyword.deleteMany();
+  await prisma.user.deleteMany();
+}
+
+async function registerAndLogin(email = "a@test.io", name = "A") {
+  await request(app).post("/api/auth/register")
+    .send({ email, password: "pw12345", name });
+  const res = await request(app).post("/api/auth/login")
+    .send({ email, password: "pw12345" });
+  return res.body.token;
+}
+
+async function createQuestion(token, overrides = {}) {
+  const res = await request(app).post("/api/questions")
+    .set("Authorization", `Bearer ${token}`)
+        .send({ question: "Q",
+                choice_1: "C1",
+                choice_2: "C2",
+                choice_3: "C3",
+                choice_4: "C4",
+                solution: "1",
+                keywords: ["K1", "K2"],
+                ...overrides });
+  return res.body;
+}
+
+module.exports = { resetDb, registerAndLogin, createQuestion };

@@ -17,4 +17,4 @@ else:
 
 print(json.dumps(response.json(), indent=2))
 
-# /api/questions?keyword=space&page=1&limit=5
+# ?keyword=space&page=1&limit=5

@@ -1,7 +1,7 @@
 const pino = require("pino");
 
 module.exports = pino({
-  level: process.env.LOG_LEVEL || "info",
+  level: process.env.LOG_LEVEL || "debug",
   redact: {
     paths: ["req.headers.authorization", "req.body.password", "*.password"],
     censor: "[REDACTED]",

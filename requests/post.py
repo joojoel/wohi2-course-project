@@ -7,13 +7,13 @@ token = requests.post("http://localhost:3000/api/auth/login", json=creds).json()
 headers = {"Authorization": "Bearer "+token}
 
 data = {
-    "question": "",
+    "question": "Test",
     "choice_1": "Test",
     "choice_2": "Test",
     "choice_3": "Test",
     "choice_4": "Test",
     "solution": "1",
-    "keywords": ["test", "test2"],
+    "keywords": ["Test1", "Test2"],
 }
 
 if (len(sys.argv) > 1):

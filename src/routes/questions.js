@@ -33,8 +33,6 @@ function filterById(jsonObject, id) {
 
 // ZOD
 
-
-
 const QuestionInput = z.object({
     question: z.string().min(1),
     choice_1: z.string().min(1),

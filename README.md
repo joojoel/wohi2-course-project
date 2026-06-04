@@ -2,5 +2,6 @@
 
 - Attempt model
 - Attempt UI
-
 - Test id changes (delete etc.)
+- Use api call parameter for solved status?
+- BUG: Sometimes returns 500 (server error) during authorization
