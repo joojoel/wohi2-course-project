@@ -10,6 +10,7 @@ module.exports = defineConfig({
             reporter: ["text", "html"],
             include: ["src/**/*.js"],
             exclude: ["src/generated/**", "src/index.js"],
-        }
+        },
+        fileParallelism: false,
     }
 });
