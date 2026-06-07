@@ -31,4 +31,3 @@ services:
 volumes:
   dbdata:
   uploads:
-

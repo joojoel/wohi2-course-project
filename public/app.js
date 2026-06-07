@@ -124,7 +124,7 @@ async function loadQuestions(keyword = "", page = 1) {
         const result = await apiFetch(`${CONFIG.ROUTES.QUESTIONS}?${params}`);
         const { data: questions, total, totalPages } = result;
         const currentUserId = getCurrentUserId();
-
+        
         const solvedCount = questions.filter((q) => q[CONFIG.API_FIELDS.SOLVED]).length;
         
         let html = `

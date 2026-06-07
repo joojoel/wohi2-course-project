@@ -50,16 +50,18 @@ const QuestionInput = z.object({
 // MINIO
 
 const minioClient = new Minio.Client({
-  endPoint: 'play.min.io',
-  port: 9000,
-  useSSL: true,
-  accessKey: 'Q3AM3UQ867SPQQA43P2F',
-  secretKey: 'zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG',
+    endPoint: 'play.min.io',
+    port: 9000,
+    useSSL: true,
+    accessKey: 'Q3AM3UQ867SPQQA43P2F',
+    secretKey: 'zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG',
 });
 
 const bucket = "images999283823";
 
-// Ensure image bucket exists
+/** 
+ * Ensure an image bucket exists
+ */
 async function bucketExists() {
     const exists = await minioClient.bucketExists(bucket);
     if (!exists) {
@@ -75,20 +77,11 @@ async function bucketExists() {
 const storage = multerMinio({
     minio: minioClient,
     bucketName: bucket,
-    // filename: (req, file, cb) => {
-    //     const ext = path.extname(file.originalname);
-    //     cb(null, `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`);
-    // },
     metaData: function (req, file, cb) {
         cb(null, { mimetype: file.mimetype });
     },
     objectName: function (req, file, cb) {
-        cb(null, Date.now().toString());
-    },
-    preprocess: {
-        '.suffix1': stream => stream,
-        '.suffix2': stream => stream,
-        '.suffix3': stream => stream,
+        cb(null, `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
     },
 });
 
@@ -106,8 +99,6 @@ const upload = multer({
 // GET /questions
 // List all questions
 router.get("/", async (req, res) => {
-    bucketExists();
-    
     const { keyword } = req.query;
 
     const where = keyword
@@ -117,14 +108,14 @@ router.get("/", async (req, res) => {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.max(1, Math.min(100, parseInt(req.query.limit) || 50));
     const skip = (page - 1) * limit;
-    
+
     const [filteredQuestions, total] = await Promise.all([
         prisma.question.findMany({
-            where, 
+            where,
             include: {
                 keywords: true,
                 user: true,
-                plays: { where: {userId: req.user.userId}, take: 1 },
+                plays: { where: { userId: req.user.userId }, take: 1 },
                 _count: { select: { plays: true } },
             },
             orderBy: { id: "asc" },
@@ -143,13 +134,13 @@ router.get("/", async (req, res) => {
     });
 
     let data = filteredQuestions.map(formatQuestion);
-    
+
     for (const key in questions_solved) {
         const q_id = questions_solved[key].questionId;
         let q = filterById(data, q_id);
         if (q) q.solved = true;
     }
-    
+
     res.json({
         data,
         page,
@@ -163,7 +154,6 @@ router.get("/", async (req, res) => {
 // GET /questions/:questionId
 // Show a specific question
 router.get("/:questionId", async (req, res) => {
-    bucketExists();
     const questionId = Number(req.params.questionId);
     const question = await prisma.question.findUnique({
         where: { id: questionId },
@@ -188,19 +178,20 @@ router.get("/:questionId", async (req, res) => {
 // Create a new question
 router.post("/", upload.single("image"), async (req, res) => {
     bucketExists();
+
     // Slides used a single variable for zod data, but this seems to work too
-    const { question, choice_1, choice_2, choice_3, choice_4, keywords} = QuestionInput.parse(req.body);
-    
+    const { question, choice_1, choice_2, choice_3, choice_4, keywords } = QuestionInput.parse(req.body);
+
     const solution = parseInt(req.body.solution) // Solution must be integer
-    
+
     if (!question || !choice_1 || !choice_2 || !choice_3 || !choice_4 || !solution) {
         throw new ValidationError("A question, 4 choices and a solution are required.");
     }
 
     const keywordsArray = Array.isArray(keywords) ? keywords : [];
 
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
-    
+    const imageUrl = req.file ? req.file.objectName : null;
+
     const newQuestion = await prisma.question.create({
         data: {
             question, choice_1, choice_2, choice_3, choice_4, solution,
@@ -214,13 +205,12 @@ router.post("/", upload.single("image"), async (req, res) => {
         },
         include: { keywords: true },
     });
-    
+
     res.status(201).json(formatQuestion(newQuestion))
 });
 
 // Play a question
 router.post("/:questionId/play", async (req, res) => {
-    bucketExists();
     const questionId = Number(req.params.questionId);
 
     const question = await prisma.question.findUnique({ where: { id: questionId } });
@@ -237,7 +227,7 @@ router.post("/:questionId/play", async (req, res) => {
             // attempt
             answer: answer,
             correct: correct,
-            attempts: {increment: 1},
+            attempts: { increment: 1 },
         },
         create: {
             userId: req.user.userId,
@@ -249,7 +239,7 @@ router.post("/:questionId/play", async (req, res) => {
     });
 
     const playCount = await prisma.play.count({ where: { questionId } });
-    
+
     res.status(201).json({
         id: play.id,
         questionId,
@@ -269,11 +259,12 @@ router.post("/:questionId/play", async (req, res) => {
 // Replace a question
 router.put("/:questionId", upload.single("image"), isOwner, async (req, res) => {
     bucketExists();
+
     const questionId = Number(req.params.questionId);
-    
+
     const { question, choice_1, choice_2, choice_3, choice_4, keywords } = req.body;
     const solution = parseInt(req.body.solution) // Solution must be integer
-    
+
     const existingQuestion = await prisma.question.findUnique({ where: { id: questionId } });
     if (!existingQuestion) {
         throw new NotFoundError("Question not found");
@@ -299,14 +290,14 @@ router.put("/:questionId", upload.single("image"), isOwner, async (req, res) => 
         include: { keywords: true },
     });
     res.json(formatQuestion(updatedQuestion));
-    
-    if (req.file) data.imageUrl = `/uploads/${req.file.filename}`;
+
+    if (req.file) data.imageUrl = req.file.objectName;
 });
 
 // DELETE /questions/:questionId
 // Delete a question
 router.delete("/:questionId", isOwner, async (req, res) => {
-    bucketExists();
+
     const questionId = Number(req.params.questionId);
 
     const question = await prisma.question.findUnique({
@@ -319,7 +310,7 @@ router.delete("/:questionId", isOwner, async (req, res) => {
     }
 
     await prisma.question.delete({ where: { id: questionId } })
-    
+
     res.json({
         message: "Question deleted successfully",
         question: formatQuestion(question),
