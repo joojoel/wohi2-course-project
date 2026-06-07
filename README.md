@@ -1,16 +1,14 @@
 # Notes
 
-- Attempt model
 - Attempt UI
 - Test id changes (delete etc.)
 - Use api call parameter for solved status?
 
-- BUG: Sometimes returns 500 (server error) during authorization
 - BUG: Concurrent test not working in vitest because of database
+- BUG: Question edit UI solution not selected
 
-- No db reset in production!
 - Use strong passwords
-- Docker object storage service
+- Docker object storage service (minio)
 
 # Differences
 
