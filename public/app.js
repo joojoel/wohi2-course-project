@@ -382,7 +382,6 @@ async function showQuestionForm(qId) {
                 break;
             }
         }
-        debugger;
 
         // Remove whitespaces and return array by comma
         const tf_keywords = document.getElementById("q-keywords").value.replace(/\s/g, "").split(",");

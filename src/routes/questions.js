@@ -1,12 +1,15 @@
 const express = require("express");
-const router = express.Router();
 const prisma = require("../lib/prisma");
 const authenticate = require("../middleware/auth");
 const isOwner = require("../middleware/isOwner");
-const path = require("path")
+const path = require("path");
 const multer = require("multer");
 const { NotFoundError, ValidationError } = require("../lib/errors");
 const { z } = require("zod");
+const Minio = require("minio");
+const multerMinio = require("multer-minio-storage-engine");
+
+const router = express.Router();
 
 // Apply authentication to ALL routes in this router
 router.use(authenticate);
@@ -44,44 +47,66 @@ const QuestionInput = z.object({
 
 // END ZOD
 
+// MINIO
+
+const minioClient = new Minio.Client({
+  endPoint: 'play.min.io',
+  port: 9000,
+  useSSL: true,
+  accessKey: 'Q3AM3UQ867SPQQA43P2F',
+  secretKey: 'zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG',
+});
+
+const bucket = "images999283823";
+
+// Ensure image bucket exists
+async function bucketExists() {
+    const exists = await minioClient.bucketExists(bucket);
+    if (!exists) {
+        await minioClient.makeBucket(bucket, 'us-east-1')
+        console.log('Bucket ' + bucket + ' created in "us-east-1".')
+    }
+}
+
+// END MINIO
+
 // MULTER
 
-const storage = multer.diskStorage({
-    destination: path.join(__dirname, "..", "..", "public", "uploads"),
-    filename: (req, file, cb) => {
-        const ext = path.extname(file.originalname);
-        cb(null, `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`);
+const storage = multerMinio({
+    minio: minioClient,
+    bucketName: bucket,
+    // filename: (req, file, cb) => {
+    //     const ext = path.extname(file.originalname);
+    //     cb(null, `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`);
+    // },
+    metaData: function (req, file, cb) {
+        cb(null, { mimetype: file.mimetype });
+    },
+    objectName: function (req, file, cb) {
+        cb(null, Date.now().toString());
+    },
+    preprocess: {
+        '.suffix1': stream => stream,
+        '.suffix2': stream => stream,
+        '.suffix3': stream => stream,
     },
 });
 
 const upload = multer({
-  storage,
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) cb(null, true);
-    else cb(new Error("Only image files are allowed"));
-  },
-  limits: { fileSize: 5 * 1024 * 1024 },
+    storage,
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith("image/")) cb(null, true);
+        else cb(new Error("Only image files are allowed"));
+    },
+    limits: { fileSize: 5 * 1024 * 1024 },
 });
-
-// This is probably not needed?
-// router.use((err, req, res, next) => {
-//     if (err instanceof multer.MulterError ||
-//         err?.message === "Only image files are allowed") {
-//         return res.status(400).json({ msg: err.message });
-//     }
-//     next(err); // pass through to global handler
-// });
-
-fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) cb(null, true);
-    else cb(new ValidationError("Only image files are allowed"));
-},
 
 // END MULTER
 
 // GET /questions
 // List all questions
 router.get("/", async (req, res) => {
+    bucketExists();
     
     const { keyword } = req.query;
 
@@ -121,9 +146,8 @@ router.get("/", async (req, res) => {
     
     for (const key in questions_solved) {
         const q_id = questions_solved[key].questionId;
-        let q = filterById(data, q_id)
-        if (q)
-            q.solved = true;
+        let q = filterById(data, q_id);
+        if (q) q.solved = true;
     }
     
     res.json({
@@ -139,6 +163,7 @@ router.get("/", async (req, res) => {
 // GET /questions/:questionId
 // Show a specific question
 router.get("/:questionId", async (req, res) => {
+    bucketExists();
     const questionId = Number(req.params.questionId);
     const question = await prisma.question.findUnique({
         where: { id: questionId },
@@ -162,6 +187,7 @@ router.get("/:questionId", async (req, res) => {
 // POST /questions
 // Create a new question
 router.post("/", upload.single("image"), async (req, res) => {
+    bucketExists();
     // Slides used a single variable for zod data, but this seems to work too
     const { question, choice_1, choice_2, choice_3, choice_4, keywords} = QuestionInput.parse(req.body);
     
@@ -194,6 +220,7 @@ router.post("/", upload.single("image"), async (req, res) => {
 
 // Play a question
 router.post("/:questionId/play", async (req, res) => {
+    bucketExists();
     const questionId = Number(req.params.questionId);
 
     const question = await prisma.question.findUnique({ where: { id: questionId } });
@@ -241,6 +268,7 @@ router.post("/:questionId/play", async (req, res) => {
 // PUT /questions/questionId
 // Replace a question
 router.put("/:questionId", upload.single("image"), isOwner, async (req, res) => {
+    bucketExists();
     const questionId = Number(req.params.questionId);
     
     const { question, choice_1, choice_2, choice_3, choice_4, keywords } = req.body;
@@ -278,6 +306,7 @@ router.put("/:questionId", upload.single("image"), isOwner, async (req, res) => 
 // DELETE /questions/:questionId
 // Delete a question
 router.delete("/:questionId", isOwner, async (req, res) => {
+    bucketExists();
     const questionId = Number(req.params.questionId);
 
     const question = await prisma.question.findUnique({
